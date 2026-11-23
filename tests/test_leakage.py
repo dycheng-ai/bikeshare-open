@@ -57,6 +57,15 @@ def test_rolling_mean_excludes_today(feats):
         assert feats.set_index("dteday").cnt_roll_7[date] == pytest.approx(expected)
 
 
+def test_cnt_lag_2_on_named_date(feats):
+    """cnt_lag_2 on 2012-06-15 must equal cnt on 2012-06-13."""
+    target_date = pd.Timestamp("2012-06-15")
+    prev_date = pd.Timestamp("2012-06-13")
+    expected = feats.loc[feats.dteday == prev_date, TARGET].values[0]
+    actual = feats.loc[feats.dteday == target_date, "cnt_lag_2"].values[0]
+    assert actual == expected, f"cnt_lag_2 at {target_date.date()} is {actual}, expected {expected}"
+
+
 def test_no_missing_values(feats):
     assert feats[feature_columns(feats)].isna().sum().sum() == 0
 
