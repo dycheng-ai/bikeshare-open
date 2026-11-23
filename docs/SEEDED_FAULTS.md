@@ -106,3 +106,5 @@ FAILED tests/test_leakage.py::test_no_forbidden_features - AssertionError: fo...
 exit code: 2
 ```
 
+**Fixed in 1 turn:** the agent removed the appended "casual" from feature_columns(); make test back to 17 passed.
+
