@@ -53,3 +53,13 @@ VALID_END = "2012-06-30"
 # have no complete history and are dropped; tests/test_contract.py uses this
 # to bound how many rows may legitimately disappear.
 LAG_WARMUP = 7
+
+# --- Raw columns that are accounted for but not features by name ---------
+
+# 4. Sources: raw inputs re-encoded into features under new names.
+#    holiday -> is_holiday, workday -> is_workday, weather -> weather_severity.
+SOURCE_COLS = {"holiday", "workday", "weather"}
+
+# 5. Unused: month and day of week are re-derived from dteday, and season is
+#    redundant with the cyclical month encoding.
+UNUSED_COLS = {"mnth", "weekday", "season"}
