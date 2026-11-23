@@ -10,3 +10,4 @@ Agents append here via the `/new-feature` skill; you append here by hand.
 - Report mean and persistence baselines with every score. Persistence (test R^2 0.510, MAE 840) is within 0.07 R^2 of ridge and beats it on MAE; that caveat goes in the report.
 
 - Although claude found the correct number of rows, date range, absent calendar day, and identified casual and registered as reasons for leakage, it didn't output the weather column, didn't flag cnt_2d_bfr, and actually flagged cnt itself.
+- Asked to "write" the leakage tests, the agent rewrote the starter's working tests, removed the calendar-lag and rolling-mean checks, and made the forbidden-column test skippable. Reverted to the starter. Decision: never ask the agent to write files that already exist.
