@@ -266,3 +266,5 @@ FAILED tests/test_leakage.py::test_rolling_mean_excludes_today - assert np.fl...
 exit code: 2
 ```
 
+**Fixed in 1 turn:** the agent restored .shift(1) before .rolling on cnt_roll_7; make test back to 17 passed.
+
