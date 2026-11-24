@@ -375,3 +375,5 @@ exit code: 0
 
 Note: the "exit code: 0" above is from tail, not the hook. Run on its own, the hook exits 2 with the new test in place.
 
+**Fixed in 1 turn:** the agent restored the unknown-label check and raise in encode_weather; make test back to 18 passed, including the new test.
+
