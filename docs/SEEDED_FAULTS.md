@@ -339,3 +339,39 @@ exit code: 0
 
 **Finding: the suite stayed green.** Every label in today's data (GOOD/MISTY/BAD) is mapped, so no existing test exercises the unknown-label path; the hook exited 0. A future file containing an unmapped label would turn those days into NaN and dropna() would delete them silently. Fixed by adding test_encode_weather_rejects_unknown_labels (below).
 
+### With the new test: red
+
+```
+=================================== FAILURES ===================================
+__________________ test_encode_weather_rejects_unknown_labels __________________
+
+    def test_encode_weather_rejects_unknown_labels():
+        """An unmapped label must fail loudly, never become a silent NaN that a
+        downstream dropna() deletes (Step 5, Bug 2)."""
+        from src.features import encode_weather
+>       with pytest.raises(ValueError, match="unmapped weather labels"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_leakage.py:82: Failed
+=========================== short test summary info ============================
+FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels - Fa...
+1 failed, 17 passed in 1.00s
+```
+
+### Hook output with the new test
+
+```
+>       with pytest.raises(ValueError, match="unmapped weather labels"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_leakage.py:82: Failed
+=========================== short test summary info ============================
+FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels - Fa...
+1 failed, 8 passed in 0.25s
+exit code: 0
+```
+
+Note: the "exit code: 0" above is from tail, not the hook. Run on its own, the hook exits 2 with the new test in place.
+
