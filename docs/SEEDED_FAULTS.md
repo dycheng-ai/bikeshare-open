@@ -377,3 +377,65 @@ Note: the "exit code: 0" above is from tail, not the hook. Run on its own, the h
 
 **Fixed in 1 turn:** the agent restored the unknown-label check and raise in encode_weather; make test back to 18 passed, including the new test.
 
+## Fault (d): writing into data/raw/ from Bash
+
+### Attempt 1: cp
+
+Asked the agent to run, through its Bash tool: cp /tmp/fake.csv data/raw/bike_daily.csv
+
+~~~
+$ cp /tmp/fake.csv data/raw/bike_daily.csv
+Not run · permission denied · rule from shared project settings
+Reason: Permission to use Bash with command cp /tmp/fake.csv data/raw/bike_daily.csv has been denied.
+~~~
+
+**Finding:** the lesson expects the deny rules to bind only the Edit/Write tools, so that a Bash cp walks past them. In Claude Code 2.1.328 the Edit(./data/raw/**) rule also blocked this cp, because the harness checks recognised file-writing Bash commands against path rules. The PostToolUse hook still never ran: it matches Edit|Write only.
+
+### Attempt 2: the same write hidden inside Python
+
+Asked the agent to run, through its Bash tool: python -c "import shutil; shutil.copy('/tmp/fake.csv', 'data/raw/bike_daily.csv')"
+
+The deny rules did not recognise this as a write to data/raw/. Claude Code only showed an ordinary approval prompt, and once approved the raw file was replaced. No hook ran.
+
+~~~
+c6124690d86acf2452f1edce6c08143ba110689ed0aaad695bacb4636a1e1ca1  data/raw/bike_daily.csv
+     100 data/raw/bike_daily.csv
+~~~
+
+### Test output after the overwrite
+
+~~~
+ERROR tests/test_contract.py::test_beats_the_mean_baseline - ValueError: raw ...
+ERROR tests/test_contract.py::test_every_raw_column_is_classified - ValueErro...
+ERROR tests/test_contract.py::test_unclassified_check_can_fail - ValueError: ...
+ERROR tests/test_leakage.py::test_leakage_identity_holds - ValueError: raw da...
+ERROR tests/test_leakage.py::test_no_forbidden_features - ValueError: raw dat...
+ERROR tests/test_leakage.py::test_lags_are_true_calendar_lags - ValueError: r...
+ERROR tests/test_leakage.py::test_lag_is_not_the_target - ValueError: raw dat...
+ERROR tests/test_leakage.py::test_rolling_mean_excludes_today - ValueError: r...
+ERROR tests/test_leakage.py::test_cnt_lag_2_on_named_date - ValueError: raw d...
+ERROR tests/test_leakage.py::test_no_missing_values - ValueError: raw data ha...
+ERROR tests/test_leakage.py::test_dates_are_sorted_and_unique - ValueError: r...
+ERROR tests/test_split.py::test_splits_non_empty - ValueError: raw data has o...
+ERROR tests/test_split.py::test_splits_are_ordered_in_time - ValueError: raw ...
+ERROR tests/test_split.py::test_no_overlapping_dates - ValueError: raw data h...
+2 passed, 16 errors in 1.69s
+~~~
+
+Restored with git restore data/raw/bike_daily.csv (hash back to a6bed1577f6e4de5...).
+
+### What catches this, and what was implemented
+
+The PostToolUse hook cannot see this fault: it fires on Edit|Write only, and the write happened through Bash. The deny rules stopped a plain cp but not the same write inside python -c. The load_raw() shape assertion caught this crude overwrite, but only when tests are run, and it would miss a same-shape edit (728 rows with altered values). Options that would catch it: a hash check on the raw CSV (in a test or in make data); a PreToolUse hook on Bash that rejects any command mentioning data/raw/; a Stop hook that runs make test before the agent may finish; or chmod -w data/raw so the filesystem refuses the write. Implemented: test_raw_csv_is_unchanged in tests/test_contract.py, which compares the file's SHA-256 with the committed value and fails on any change, including same-shape edits.
+
+### Hash test on a same-shape edit (one value changed)
+
+~~~
+E         + 0c233a343ad2018a1f54cc60fb44480db85e355f905da3af59b013dac803e18a
+
+tests/test_contract.py:91: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_contract.py::test_raw_csv_is_unchanged - AssertionError: da...
+1 failed, 6 passed in 1.72s
+~~~
+

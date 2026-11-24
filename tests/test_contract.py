@@ -74,3 +74,18 @@ def test_every_raw_column_is_classified(raw, feats):
 def test_unclassified_check_can_fail(raw, feats):
     """Proves the check above is not vacuous: an extra column is caught."""
     assert _unclassified(raw.assign(surprise=1), feats) == ["surprise"]
+
+
+RAW_SHA256 = "a6bed1577f6e4de56dcfae6d8315985073cc0ad3446c8c99ed60c86a0b5ad9dc"
+
+
+def test_raw_csv_is_unchanged():
+    """Raw data is immutable. Catches writes the PostToolUse hook cannot see,
+    such as a copy into data/raw/ from Bash (seeded fault d), including
+    same-shape edits that load_raw's assertions would miss."""
+    import hashlib
+
+    from src.config import RAW
+
+    digest = hashlib.sha256(RAW.read_bytes()).hexdigest()
+    assert digest == RAW_SHA256, "data/raw/bike_daily.csv was modified; restore it with git"
