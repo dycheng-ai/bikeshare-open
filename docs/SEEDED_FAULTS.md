@@ -268,3 +268,74 @@ exit code: 2
 
 **Fixed in 1 turn:** the agent restored .shift(1) before .rolling on cnt_roll_7; make test back to 17 passed.
 
+
+## Fault: encode_weather ValueError check deleted (unknown labels → silent NaN)
+
+### Change
+
+```diff
+diff --git a/src/features.py b/src/features.py
+index 02e93ca..049bf1d 100644
+--- a/src/features.py
++++ b/src/features.py
+@@ -24,10 +24,6 @@ def encode_weather(series: pd.Series) -> pd.Series:
+     days -- the most interesting days in the dataset -- disappear with no
+     error and no warning.
+     """
+-    known = series.dropna()
+-    unknown = set(known.unique()) - set(WEATHER_ORDER)
+-    if unknown:
+-        raise ValueError(f"unmapped weather labels: {sorted(unknown)}")
+     return series.map(WEATHER_ORDER).astype(float)
+```
+
+### Test output (no failures despite the fault)
+
+```
+.................                                                        [100%]
+17 passed in 1.85s
+```
+
+### Hook stderr (PostToolUse)
+
+*(none - tests pass)*
+
+**Seeded, awaiting fix.**
+
+## Fault (c): raise removed from encode_weather
+
+### Change
+
+```diff
+diff --git a/src/features.py b/src/features.py
+index 02e93ca..049bf1d 100644
+--- a/src/features.py
++++ b/src/features.py
+@@ -24,10 +24,6 @@ def encode_weather(series: pd.Series) -> pd.Series:
+     days -- the most interesting days in the dataset -- disappear with no
+     error and no warning.
+     """
+-    known = series.dropna()
+-    unknown = set(known.unique()) - set(WEATHER_ORDER)
+-    if unknown:
+-        raise ValueError(f"unmapped weather labels: {sorted(unknown)}")
+     return series.map(WEATHER_ORDER).astype(float)
+ 
+ 
+```
+
+### Test output
+
+```
+.................                                                        [100%]
+17 passed in 1.54s
+```
+
+### Hook output (PostToolUse)
+
+```
+exit code: 0
+```
+
+**Finding: the suite stayed green.** Every label in today's data (GOOD/MISTY/BAD) is mapped, so no existing test exercises the unknown-label path; the hook exited 0. A future file containing an unmapped label would turn those days into NaN and dropna() would delete them silently. Fixed by adding test_encode_weather_rejects_unknown_labels (below).
+
