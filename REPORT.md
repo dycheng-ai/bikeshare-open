@@ -49,3 +49,5 @@ Model: qwen3.5:9b via Ollama on my laptop, 64k context (`bikeshare-coder`), used
 - The result is believable only as "0.07 R² better than persistence," not as "R² = 0.58"
 
 Where the agent got things wrong (also in `docs/DECISIONS.md`): it misdescribed the data in Step 2, rewrote working starter tests when asked to "write" them, added an extra test despite being told not to edit tests, and the first audit attempt ran a general-purpose agent instead of the leakage-auditor.
+
+Note: `agent/audit.py` was started on my own repo at 5:20 PM but had not finished by the deadline on the local 9B model (each step took 5–8 minutes as its context grew past 30k tokens), so `reports/audit.jsonl` is missing.
